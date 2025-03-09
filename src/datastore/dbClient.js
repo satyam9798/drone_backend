@@ -1,12 +1,16 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'postgres',
-    password: 'pass',
-    port: 5432,
+    host: process.env.POSTGRES_HOST,
+    user: process.env.POSTGRES_USER,
+    database: process.env.POSTGRES_DB,
+    password: process.env.POSTGRES_PASSWORD,
+    port: 6432,
 });
 
 /**
@@ -16,3 +20,5 @@ const pool = new Pool({
  * @returns {Promise<Object>} - Query result.
  */
 export const query = (text, params) => pool.query(text, params);
+
+export default pool;
