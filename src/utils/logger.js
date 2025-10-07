@@ -3,7 +3,7 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 import path from 'path';
 
 // Define log format
-const logFormat = winston.format.printf(({ timestamp, level, message, transactionId }) => {
+const logFormat = winston.format.printf(async ({ timestamp, level, message, transactionId }) => {
     return `${timestamp} [${transactionId || 'N/A'}] ${level.toUpperCase()}: ${message}`;
 });
 

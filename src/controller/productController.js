@@ -1,6 +1,7 @@
 import * as service from '../service/service.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import { createSuccessResponse } from '../builders/responseBuilder.js';
+import camelcaseKeys from 'camelcase-keys';
 
 /**
  * Controller function to handle fetching products.
@@ -22,8 +23,9 @@ export const getProduct = asyncHandler(async (req, res) => {
  * @throws {DatastoreError} - If there is a service error.
  */
 export const getProductById = asyncHandler(async (req, res) => {
-    const updatedProduct = await service.fetchProductById(req.params.id);
-    res.json(createSuccessResponse(updatedProduct, 'Product updated successfully'));
+    const product = await service.fetchProductById(req.params.id);
+    const camelCasedProduct = camelcaseKeys(product, { deep: true });
+    res.json(createSuccessResponse(camelCasedProduct, 'Product fetched successfully'));
 });
 
 /**
@@ -34,7 +36,7 @@ export const getProductById = asyncHandler(async (req, res) => {
  * @throws {DatastoreError} - If there is a service error.
  */
 export const addProduct = asyncHandler(async (req, res) => {
-    const product = await service.createProduct(req.body);
+    const product = await service.addProduct(req.body);
     res.status(201).json(createSuccessResponse(product, 'Product added successfully'));
 });
 
@@ -58,6 +60,30 @@ export const updateProduct = asyncHandler(async (req, res) => {
  * @throws {DatastoreError} - If there is a service error.
  */
 export const deleteProduct = asyncHandler(async (req, res) => {
-    await service.deleteProduct(req.params.id);
-    res.json(createSuccessResponse(null, 'Product deleted successfully'));
+    try {
+        await service.deleteProductById(req.params.id);
+        res.json(createSuccessResponse(null, 'Product deleted successfully'));
+    } catch (error) {
+        res.status(500).json({ error: 'Unable to delete the product' });
+    }
+});
+
+export const uploadImage = asyncHandler(async (req, res) => {
+    try {
+        const { originalname, buffer, mimetype } = req.file;
+
+        const imageId = await service.storeImage(originalname, buffer, mimetype);
+        res.status(200).json({ message: 'Image uploaded successfully', imageId });
+    } catch (error) {
+        console.log(error);
+    }
+});
+
+export const getImageById = asyncHandler(async (req, res) => {
+    const image = await service.fetchImageById(req.params.id);
+
+    if (!image) return res.status(404).send('Image not found');
+
+    res.set('Content-Type', image.mimetype);
+    res.send(image.data);
 });

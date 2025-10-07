@@ -1,7 +1,5 @@
-import { AsyncLocalStorage } from 'async_hooks';
+const als = (await import('asynchronous-local-storage')).default;
 import { v4 as uuidv4 } from 'uuid';
-
-const als = new AsyncLocalStorage();
 
 /**
  * Middleware to create a request context and store a unique transaction ID
@@ -12,18 +10,16 @@ const als = new AsyncLocalStorage();
 const createContext = (req, res, next) => {
     const transactionId = uuidv4();
 
-    als.run(new Map(), () => {
-        als.getStore().set('transactionId', transactionId);
-        next();
-    });
+    als.als.set('transactionId', transactionId);
+    next();
 };
 
 /**
- * Get the current transaction ID from AsyncLocalStorage
- * @returns {string} transactionId
+ * Retrieves the current transaction ID from AsyncLocalStorage
+ * @returns {string} transactionId or 'UNKNOWN_TXN_ID' if not found
  */
-const getTransactionId = () => {
-    return als.getStore()?.get('transactionId') || 'N/A';
+const getTransactionId = async () => {
+    return (await als.get('transactionId')) || 'UNKNOWN_TXN_ID';
 };
 
 export { createContext, getTransactionId };
