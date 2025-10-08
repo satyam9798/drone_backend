@@ -29,9 +29,11 @@ process.on('unhandledRejection', (reason, promise) => {
 const startServer = async () => {
     await testDbConnection();
 
-    app.listen(port, () => {
-        console.log(`Server running on port ${port}`);
-    });
+    // app.listen(port, () => {
+    //     console.log(`Server running on port ${port}`);
+    // });
 };
 
 startServer();
+
+export default app;
