@@ -4,9 +4,12 @@ import errorHandler from './middleware/errorHandler.js';
 import { createContext } from './middleware/createContext.js';
 import { port } from './utils/config.js';
 import cors from 'cors';
-import { testDbConnection } from './datastore/dbClient.js';
+import http from 'http';
+
+import { connectToPostgres } from './datastore/dbClient.js';
 
 const app = express();
+const server = http.createServer(app);
 
 app.use(express.json());
 
@@ -27,11 +30,11 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 const startServer = async () => {
-    await testDbConnection();
+    await connectToPostgres();
 
-    // app.listen(port, () => {
-    //     console.log(`Server running on port ${port}`);
-    // });
+    server.listen(port, () => {
+        console.log(`🚀 Server started at http://localhost:${port}`);
+    });
 };
 
 startServer();

@@ -3,54 +3,46 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 const { Pool } = pkg;
-
-let pool;
-
-const createPool = () => {
-    pool = new Pool({
-        host: process.env.POSTGRES_HOST,
-        user: process.env.POSTGRES_USER,
-        database: process.env.POSTGRES_DB,
-        password: process.env.POSTGRES_PASSWORD,
-        port: process.env.POSTGRES_PORT || 5432,
-        connectionTimeoutMillis: 10000,
-        idleTimeoutMillis: 30000,
-        ssl: { rejectUnauthorized: false },
-    });
-
-    // Global pool error handler
-    pool.on('error', (err) => {
-        console.error('Unexpected PostgreSQL error:', err.message);
-        console.log('Attempting to reconnect in 5 seconds...');
-        setTimeout(() => {
-            pool.end();
-            createPool();
-        }, 5000);
-    });
-
-    return pool;
+const pgConfig = {
+    host: process.env.POSTGRES_HOST,
+    user: process.env.POSTGRES_USER,
+    database: process.env.POSTGRES_DB,
+    password: process.env.POSTGRES_PASSWORD,
+    port: process.env.POSTGRES_PORT,
+    connectionTimeoutMillis: 10000, // ⏱ wait 10s max for initial connection
+    idleTimeoutMillis: 30000, // close idle clients after 30s
+    max: 10, // max pool size
 };
 
-createPool();
+export const client = new Pool(pgConfig);
+
+/**
+ * Connects to Postgres with retries
+ */
+export async function connectToPostgres(retries = 5, delayMs = 5000) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            await client.connect();
+            console.log('✅ Connected to PostgreSQL');
+            return;
+        } catch (err) {
+            console.error(
+                `❌ Failed to connect to Postgres (attempt ${attempt}/${retries}):`,
+                err.message,
+            );
+
+            if (attempt < retries) {
+                console.log(`⏳ Retrying in ${delayMs / 1000}s...`);
+                await new Promise((resolve) => setTimeout(resolve, delayMs));
+            } else {
+                console.error('🚨 Could not connect to Postgres. Exiting.');
+                process.exit(1); // stop the server if DB is unavailable
+            }
+        }
+    }
+}
 
 /**
  * Executes a database query.
  */
-export const query = (text, params) => pool.query(text, params);
-
-/**
- * Test DB connection on startup
- */
-export const testDbConnection = async () => {
-    try {
-        const client = await pool.connect();
-        console.log('PostgreSQL connected successfully');
-        client.release();
-    } catch (err) {
-        console.error('Failed to connect to PostgreSQL on startup:', err.message);
-        console.log('Retrying in 5 seconds...');
-        setTimeout(testDbConnection, 5000);
-    }
-};
-
-export default pool;
+export const query = (text, params) => client.query(text, params);

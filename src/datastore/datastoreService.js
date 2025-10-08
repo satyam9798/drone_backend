@@ -9,7 +9,7 @@ import logger from '../utils/logger.js';
  */
 export const fetchProductsFromDB = async () => {
     try {
-        const result = await query('SELECT * FROM products', []);
+        const result = await query('SELECT * FROM public.products', []);
         return result.rows;
     } catch (error) {
         throw new DatastoreError('Error fetching products from database');
@@ -23,13 +23,13 @@ export const fetchProductsFromDB = async () => {
  */
 export const fetchProductByIdFromDB = async (productId) => {
     try {
-        const result = await query('SELECT * FROM products WHERE id = $1', [productId]);
+        const result = await query('SELECT * FROM public.products WHERE id = $1', [productId]);
         if (result.rows.length === 0) {
             return null;
         }
         return result.rows[0];
     } catch (error) {
-        throw new DatastoreError(`Error fetching product with ID: ${productId}`);
+        throw new DatastoreError(`Error fetching public.product with ID: ${productId}`);
     }
 };
 
@@ -54,7 +54,7 @@ export const insertProductIntoDB = async (productData) => {
             features,
         } = productData;
         const result = await query(
-            `INSERT INTO products (name, short_description, long_description, category_id, display_image_id, image_ids, price, discounted_price, in_stock, is_featured, features)
+            `INSERT INTO public.products (name, short_description, long_description, category_id, display_image_id, image_ids, price, discounted_price, in_stock, is_featured, features)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
             [
                 name,
@@ -92,7 +92,7 @@ export const updateProductIntoDB = async (id, productData) => {
         } = productData;
 
         const result = await query(
-            `UPDATE products
+            `UPDATE public.products
             SET name = $1,
                 short_description = $2,
                 long_description = $3,
@@ -130,14 +130,14 @@ export const updateProductIntoDB = async (id, productData) => {
 
 export const insertImage = async (filename, data, mimetype) => {
     const result = await query(
-        'INSERT INTO images (filename, data, mimetype) VALUES ($1, $2, $3) RETURNING id',
+        'INSERT INTO public.images (filename, data, mimetype) VALUES ($1, $2, $3) RETURNING id',
         [filename, data, mimetype],
     );
     return result.rows[0];
 };
 
 export const getImage = async (id) => {
-    const result = await query('SELECT * FROM images WHERE id = $1', [id]);
+    const result = await query('SELECT * FROM public.images WHERE id = $1', [id]);
     return result.rows[0];
 };
 
@@ -150,8 +150,8 @@ export const getAllImage = async () => {
         i.filename,
         p.id AS product_id,
         p.name AS product_name
-      FROM images i
-      LEFT JOIN products p
+      FROM public.images i
+      LEFT JOIN public.products p
         ON i.id = p.display_image_id OR i.id = ANY(p.image_ids);
       
     `,
@@ -167,7 +167,7 @@ export const getAllImage = async () => {
 export const checkImageLinking = async (imageId) => {
     const isLinked = await query(
         `
-      SELECT 1 FROM products
+      SELECT 1 FROM public.products
       WHERE display_image_id = $1 OR $1 = ANY(image_ids)
       LIMIT 1;
     `,
@@ -179,7 +179,7 @@ export const checkImageLinking = async (imageId) => {
 
 export const deleteImageById = async (imageId) => {
     try {
-        const data = await query('DELETE FROM images WHERE id = $1', [imageId]);
+        const data = await query('DELETE FROM public.images WHERE id = $1', [imageId]);
     } catch (error) {
         console.log(error);
     }
@@ -187,7 +187,7 @@ export const deleteImageById = async (imageId) => {
 
 export const deleteProductById = async (productId) => {
     try {
-        const data = await query('DELETE FROM products WHERE id = $1', [productId]);
+        const data = await query('DELETE FROM public.products WHERE id = $1', [productId]);
     } catch (error) {
         console.log(error);
     }
