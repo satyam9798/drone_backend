@@ -7,7 +7,7 @@ import { query } from '../datastore/dbClient.js';
  */
 export const getCategories = async (req, res) => {
     try {
-        const result = await query(`SELECT id, name FROM categories`);
+        const result = await query(`SELECT id, name FROM public.categories`);
         res.json(result.rows);
     } catch (err) {
         console.error('Error fetching categories:', err);
