@@ -18,6 +18,10 @@ import { deleteImageController, getAllImages } from '../controller/imageControll
 const upload = multer();
 
 const router = express.Router();
+// test
+router.get('/', (_, res) => {
+    res.send(`Welcome Zemlabs Drone Server`);
+});
 
 /**
  * Route to fetch products.
